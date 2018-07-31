@@ -1,0 +1,26 @@
+{
+    "require": {
+        "dshafik/php7-mysql-shim": "^0.2.0",
+        "rych/bencode": "^1.0",
+        "adriengibrat/torrent-rw": "0.0.3"
+    },
+    "repositories": {
+		"torrent-rw" :{
+			"type": "package",
+			"package": {
+			  "name": "adriengibrat/torrent-rw",
+			  "version": "0.0.3",
+			  "source": {
+				"url": "https://github.com/adriengibrat/torrent-rw",
+				"type": "git",
+				"reference": "master"
+			  }
+			}
+		}
+    },
+	"autoload": {
+		"psr-4": {
+			"": "vendor/adriengibrat/torrent-rw"
+		}
+	}
+}

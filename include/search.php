@@ -6,13 +6,13 @@ require_once "torrenttable_functions.php";
 require_once "pager_functions.php";
 
 
-function search($_GET,$CURUSER){
+function search($__GET,$CURUSER){
 
 
 $cats = genrelist();
 
-if(isset($_GET["search"])) {
-$searchstr = unesc($_GET["search"]);
+if(isset($__GET["search"])) {
+$searchstr = unesc($__GET["search"]);
 $cleansearchstr = searchfield($searchstr);
 if (empty($cleansearchstr))
 	unset($cleansearchstr);
@@ -24,14 +24,14 @@ $addparam = "";
 $wherea = array();
 $wherecatina = array();
 
-if (isset($_GET["incldead"]) &&  $_GET["incldead"] == 1)
+if (isset($__GET["incldead"]) &&  $__GET["incldead"] == 1)
 {
 	$addparam .= "incldead=1&amp;";
 	if (!isset($CURUSER) || get_user_class() < UC_ADMINISTRATOR)
 		$wherea[] = "banned != 'yes'";
 }
 else
-	if (isset($_GET["incldead"]) && $_GET["incldead"] == 2)
+	if (isset($__GET["incldead"]) && $__GET["incldead"] == 2)
 {
 	$addparam .= "incldead=2&amp;";
 		$wherea[] = "visible = 'no'";
@@ -39,20 +39,20 @@ else
 	else
 		$wherea[] = "visible = 'yes'";
 
-$category = (isset($_GET["cat"])) ? (int)$_GET["cat"] : false;
+$category = (isset($__GET["cat"])) ? (int)$__GET["cat"] : false;
 
-$license =  (isset($_GET["lic"])) ? (int)$_GET["lic"] : false;
+$license =  (isset($__GET["lic"])) ? (int)$__GET["lic"] : false;
 
-$version =  (isset($_GET["ver"])) ? (int)$_GET["ver"] : false;
+$version =  (isset($__GET["ver"])) ? (int)$__GET["ver"] : false;
 
-$user = (isset($_GET["user"])) ? (int)$_GET["user"] : false;
+$user = (isset($__GET["user"])) ? (int)$__GET["user"] : false;
 
-$all = isset($_GET["all"]) ? $_GET["all"] : false;
+$all = isset($__GET["all"]) ? $__GET["all"] : false;
 
-$page_limit= isset($_GET["page_limit"]) ? $_GET["page_limit"] : false;
+$page_limit= isset($__GET["page_limit"]) ? $__GET["page_limit"] : false;
 
 if (!$all)
-	if (!$_GET && $CURUSER["notifs"])
+	if (!$__GET && $CURUSER["notifs"])
 	{
 	  $all = True;
 	  foreach ($cats as $cat)
@@ -77,8 +77,8 @@ if (!$all)
 	  $all = True;
 	  foreach ($cats as $cat)
 	  {
-	    $all &= isset($_GET["c{$cat['id']}"]);
-	    if (isset($_GET["c{$cat['id']}"]))
+	    $all &= isset($__GET["c{$cat['id']}"]);
+	    if (isset($__GET["c{$cat['id']}"]))
 	    {
 	      $wherecatina[] = $cat['id'];
 	      $addparam .= "c{$cat['id']}=1&amp;";

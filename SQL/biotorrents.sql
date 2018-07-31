@@ -241,6 +241,7 @@ CREATE TABLE `peers` (
   `torrent` int(10) unsigned NOT NULL DEFAULT '0',
   `passkey` varchar(32) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
   `peer_id` varchar(20) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+  `peer_id_hex` varchar(40) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL DEFAULT '',
   `ip` varchar(64) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL DEFAULT '',
   `port` smallint(5) unsigned NOT NULL DEFAULT '0',
   `uploaded` bigint(20) unsigned NOT NULL DEFAULT '0',
@@ -497,6 +498,7 @@ DROP TABLE IF EXISTS `torrents`;
 CREATE TABLE `torrents` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `info_hash` varchar(20) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+  `info_hash_hex` varchar(40) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL DEFAULT '',
   `name` varchar(255) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL DEFAULT '',
   `filename` varchar(255) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL DEFAULT '',
   `save_as` varchar(255) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL DEFAULT '',

@@ -97,10 +97,10 @@ if ($a[0] != 0)
       // TIMEZONE STUFF
       if(isset($_POST["user_timezone"]) && preg_match('#^\-?\d{1,2}(?:\.\d{1,2})?$#', $_POST['user_timezone']))
       {
-      $time_offset = sqlesc($_POST['user_timezone']);
+      $time_offset = intval(sqlesc($_POST['user_timezone']));
       }
       else
-      { $time_offset = isset($CONFIG_INFO['time_offse']) ? sqlesc($CONFIG_INFO['time_offse']) : '0'; }
+      { $time_offset = isset($CONFIG_INFO['time_offset']) ? sqlesc($CONFIG_INFO['time_offset']) : '0'; }
       // have a stab at getting dst parameter?
       $dst_in_use = localtime(time() + ($time_offset * 3600), true);
       // TIMEZONE STUFF END

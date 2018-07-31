@@ -64,6 +64,7 @@ $announce_list = array(
   		   'type' => 'string')
 		 );
 
+if(isset($announce_urls[1]))
 $announce_list2 = array(	
 	       array(
     		  'value' => $announce_urls[1],
@@ -71,11 +72,11 @@ $announce_list2 = array(
 		 );
 
 
-#two trackers
-#$dict['value']['announce-list']['value'] = array( array( 'value' => $announce_list, 'type' => 'list' ),array( 'value' => $announce_list2, 'type' => 'list' ));
 
-#one tracker
-$dict['value']['announce-list']['value'] = array( array( 'value' => $announce_list, 'type' => 'list' ));
+if(isset($announce_list2)) // two trackers
+	$dict['value']['announce-list']['value'] = array( array( 'value' => $announce_list, 'type' => 'list' ),array( 'value' => $announce_list2, 'type' => 'list' ));
+else // one tracker
+	$dict['value']['announce-list']['value'] = array( array( 'value' => $announce_list, 'type' => 'list' ));
 
 $dict['value']['announce-list']['type'] = 'list';
 

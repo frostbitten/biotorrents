@@ -1,5 +1,6 @@
 <?php
 
+require_once("vendor/autoload.php");
 require_once("include/benc.php");
 require_once("include/bittorrent.php");
 require_once "include/user_functions.php";
@@ -80,6 +81,8 @@ if (!is_uploaded_file($tmpname))
 if (!filesize($tmpname))
 	bark("Empty file!");
 
+
+$torrent = new Torrent($tmpname);
 $dict = bdec_file($tmpname, $max_torrent_size);
 if (!isset($dict))
 	bark("What the hell did you upload? This is not a bencoded file!");
@@ -186,6 +189,7 @@ else {
 
 
 $infohash = pack("H*", sha1($info["string"]));
+$infohashhex = $torrent->hash_info();
 
 unset($info);
 // Replace punctuation characters with spaces
@@ -196,8 +200,8 @@ $torrent = str_replace("_", " ", $torrent);
 #Morgan: Add version insert if applicable
 $version_id = get_version_id_for_torrent($version_torrent_id,0);
 
-$ret = mysql_query("INSERT INTO torrents (search_text, filename, owner, visible, info_hash, name, size, numfiles, type,descr, ori_descr, category,license, save_as, added, last_action, nfo, client_created_by, version) VALUES (" .
-		implode(",", array_map("sqlesc", array(searchfield("$shortfname $dname $torrent"), $fname, $CURUSER["id"], "no", $infohash, $torrent, $totallen, count($filelist), $type, $descr, $descr, $catid, $lic_id, $dname))) .
+$ret = mysql_query("INSERT INTO torrents (search_text, filename, owner, visible, info_hash, info_hash_hex, name, size, numfiles, type,descr, ori_descr, category,license, save_as, added, last_action, nfo, client_created_by, version) VALUES (" .
+		implode(",", array_map("sqlesc", array(searchfield("$shortfname $dname $torrent"), $fname, $CURUSER["id"], "no", $infohash, $infohashhex, $torrent, $totallen, count($filelist), $type, $descr, $descr, $catid, $lic_id, $dname))) .
 		", " . time() . ", " . time() . ", $nfo, $tmaker, $version_id)");
 if (!$ret) {
 	if (mysql_errno() == 1062)

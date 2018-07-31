@@ -17,8 +17,17 @@
 +------------------------------------------------
 */
 
+require_once('vendor/autoload.php'); 
 require_once("include/config.php");
 require_once("include/secrets.php");
+
+
+$headers = getallheaders();
+$gzip = (isset($headers["Accept-Encoding"]) && $headers["Accept-Encoding"] === "gzip");
+
+
+
+ob_start($gzip?"ob_gzhandler":null);
 
 ////////////////// GLOBAL VARIABLES ////////////////////////////	
 $TBDEV['announce_interval'] = 60 * 30;
@@ -36,7 +45,7 @@ if (
     preg_match("/^Links/", $agent) || 
     preg_match("/^Lynx\\//", $agent) || 
     isset($_SERVER['HTTP_COOKIE']) || 
-    isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) || 
+    // isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ||  //utorrent 3.2.2 sends this
     isset($_SERVER['HTTP_ACCEPT_CHARSET'])
     )
     err("torrent not registered with this tracker CODE 1");
@@ -69,14 +78,7 @@ function benc_resp_raw($x)
 {
     header( "Content-Type: text/plain" );
     header( "Pragma: no-cache" );
-
-    if ( $_SERVER['HTTP_ACCEPT_ENCODING'] == 'gzip' )
-    {
-        header( "Content-Encoding: gzip" );
-        echo gzencode( $x, 9, FORCE_GZIP );
-    }
-    else
-        echo $x ;
+	echo $x ;
 }
 
 function benc($obj) {
@@ -195,7 +197,7 @@ if (strlen($GLOBALS[$x]) != 20) err("Invalid $x (" . strlen($GLOBALS[$x]) . " - 
 unset($x);
 
 
-
+$info_hash_hex = bin2hex($_GET['info_hash']);
 $ip = $_SERVER['REMOTE_ADDR'];
 
 $port = 0 + $port;
@@ -230,15 +232,17 @@ $user_query = mysql_query("SELECT id, uploaded, downloaded, class, enabled FROM 
 if ( mysql_num_rows($user_query) != 1 )
 
  err("Unknown passkey. Please redownload the torrent from {$BASEURL}.");
- 
+
 	$user = mysql_fetch_assoc($user_query);
 	if( $user['enabled'] == 'no' ) err('Permission denied, you\'re not enabled');
 	
 	
-$res = mysql_query("SELECT id, banned, seeders + leechers AS numpeers, added AS ts FROM torrents WHERE info_hash = " .sqlesc($info_hash));//" . hash_where("info_hash", $info_hash));
+$res = mysql_query("SELECT id, banned, seeders + leechers AS numpeers, added AS ts FROM torrents WHERE info_hash_hex = " .sqlesc($info_hash_hex));
+if (!$res)
+	err("torrent not registered with this tracker CODE 2");
 
 $torrent = mysql_fetch_assoc($res);
-if (!$torrent)
+if (!$torrent) // if (!isset($torrent,$torrent["id"]))
 	err("torrent not registered with this tracker CODE 2");
 
 $torrentid = $torrent["id"];
@@ -269,12 +273,15 @@ $resp = "d" . benc_str("interval") . "i" . $TBDEV['announce_interval'] ."e" . be
 
 }
 
+
 $peer = array();
 
 $peer_num = 0;
+
 while ($row = mysql_fetch_assoc($res))
 
 {
+
 
     if($_GET['compact'] != 1)
 
@@ -295,6 +302,7 @@ if ($row["peer_id"] === $peer_id)
  continue;
 
 }
+
 
 
 
@@ -349,6 +357,7 @@ $peer_num++;
 
 
 
+
 if ($_GET['compact']!=1)
 
 $resp .= "ee";
@@ -369,24 +378,32 @@ $resp .= strlen($o) . ':' . $o . 'e';
 
 }
 
-$selfwhere = "torrent = $torrentid AND " . hash_where("peer_id", $peer_id);
+$selfwhere = "torrent = $torrentid AND " . hash_where("peer_id_hex", bin2hex($peer_id));
 
 ///////////////////////////// END NEW COMPACT MODE////////////////////////////////
 
 
 
+
 if (!isset($self))
 {
-	$res = mysql_query("SELECT $fields FROM peers WHERE $selfwhere");
-	$row = mysql_fetch_assoc($res);
-	if ($row)
-	{
-		$userid = $row["userid"];
-		$self = $row;
+	$qryStrNow = "SELECT $fields FROM peers WHERE $selfwhere";
+	$res = mysql_query($qryStrNow);
+
+	if(is_bool($res)){
+		error_log('error getting qry:'.$qryStrNow);
+	}else{
+		$row = mysql_fetch_assoc($res);
+		if ($row)
+		{
+			$userid = $row["userid"];
+			$self = $row;
+		}
 	}
 }
 
 //// Up/down stats ////////////////////////////////////////////////////////////
+
 
 
 
@@ -434,6 +451,7 @@ else
 ///////////////////////////////////////////////////////////////////////////////
 
 
+
 $updateset = array();
 
 if ($event == "stopped")
@@ -475,8 +493,9 @@ else
 	}
 	else
 	{
-		if ($event != "started")
-			err("Peer not found. ".$passkey." Restart the torrent.");
+		if ($event != "started"){
+			//allow non-events (could be: update from paused torrent, causing error and requiring manual restart by user) // err("Peer not found. ".$passkey." Restart the torrent.");
+		}
 
 		if (portblacklisted($port))
 			err("Port $port is blacklisted.");
@@ -492,7 +511,7 @@ else
 			}
 		}
 
-		$ret = mysql_query("INSERT INTO peers (connectable, torrent, peer_id, ip, port, uploaded, downloaded, to_go, started, last_action, seeder, userid, agent, passkey) VALUES ('$connectable', $torrentid, " . sqlesc($peer_id) . ", " . sqlesc($ip) . ", $port, $uploaded, $downloaded, $left, ".time().", ".time().", '$seeder', {$user['id']}, " . sqlesc($agent) . "," . sqlesc($passkey) . ")");
+		$ret = mysql_query("INSERT INTO peers (connectable, torrent, peer_id, peer_id_hex, ip, port, uploaded, downloaded, to_go, started, last_action, seeder, userid, agent, passkey) VALUES ('$connectable', $torrentid, " . sqlesc($peer_id) . ", " . sqlesc(bin2hex($peer_id)) . ", " . sqlesc($ip) . ", $port, $uploaded, $downloaded, $left, ".time().", ".time().", '$seeder', {$user['id']}, " . sqlesc($agent) . "," . sqlesc($passkey) . ")");
 		
 		if ($ret)
 		{
@@ -514,8 +533,10 @@ if ($seeder == "yes")
 if (count($updateset))
 	mysql_query("UPDATE torrents SET " . join(",", $updateset) . " WHERE id = $torrentid");
 
+
 benc_resp_raw($resp);
 
 
 
+ob_end_flush();
 ?>

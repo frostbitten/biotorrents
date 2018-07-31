@@ -23,6 +23,7 @@ $longopts  = array(
     "db::",
     "host::",
     "baseurl::",        
+    "mysql_path::",
 );
 // get cli options
 $options = getopt("",$longopts);
@@ -33,6 +34,7 @@ if (!isset($options["host"])) {
 }
 
 
+$mysqlLocation = $options['mysql_path']??"";
 
 
 
@@ -61,17 +63,15 @@ if (file_exists("../include/secrets.php")) {
     }
 
     // create new secrets.php from template using
-    $cmd = "cp ../include/secrets.php.sample ../include/secrets.php";
     print "Creating new secrets.php from template \n";
-    exec($cmd);
+	$secretsTemplate = file_get_contents("../include/secrets.php.sample");
 
     // add parameters to secrets.php    
     print "Adding parameters to secrets.php\n";
     foreach ($seclist as $value) {
-        // edit secrets.php        
-        $cmd = "sed -i 's/%%".$value."%%/".$options[$value]."/g' ../include/secrets.php";
-        exec($cmd);
+		$secretsTemplate = str_replace("%%".$value."%%",$options[$value],$secretsTemplate); 
     }  
+	file_put_contents("../include/secrets.php",$secretsTemplate);
 }
 
 
@@ -79,20 +79,24 @@ if (file_exists("../include/secrets.php")) {
 require_once "../include/secrets.php";
 print "Successfully loaded secrets.php\n";
 
+$pass = preg_replace('/./i','*',$mysql_pass);
 print("User: $mysql_user \n");
-print("Pass: $mysql_pass \n");
+print("Pass: $pass \n");
 print("DB: $mysql_db \n");
 print("Host: $mysql_host \n");
 
-// set up loop for sql import    
-$cmd = 'for f in biotorrents guest_user avps countries searchcloud categories reputationlevel stylesheets licenses; do '
-    . "mysql -u $mysql_user -p$mysql_pass -h $mysql_host $mysql_db < "
-    .'../SQL/$f.sql'
-    . '; done';
+
 
 // load sql
 print "Loading SQL statemnts\n";
+foreach(['biotorrents','guest_user','avps','countries','searchcloud','categories','reputationlevel','stylesheets','licenses'] as $f){ 
+// set up loop for sql import    
+$cmd = $mysqlLocation."mysql -u $mysql_user -p$mysql_pass -h $mysql_host $mysql_db < "
+    .'../SQL/'.$f.'.sql';
+    // . '; done';
 exec($cmd);
+}
+
 
 
 
@@ -125,18 +129,15 @@ if (file_exists("../include/config.php")) {
     
     // copy from template
     print "Creating config.php from template \n";
-    $cmd = "cp ../include/config.php.sample ../include/config.php";
-    exec($cmd);
+	$configTemplate = file_get_contents("../include/config.php.sample");
 
 // add baseurl to config.php
     print "Adding ".$options["baseurl"]." to config.php\n"
         .'$DEFAULTBASEURL = '
         .$options["baseurl"]
         ."\n";
-    $cmd = 'sed -i "s/%%BASEURL%%/'
-        .addcslashes($options["baseurl"],"/")
-        .'/g" ../include/config.php';
-    exec($cmd);
+	$configTemplate = str_replace("%%BASEURL%%",$options["baseurl"],$configTemplate);
+	file_put_contents("../include/config.php",$configTemplate);
 }    
 
 print "\nInstall complete.\n\n";

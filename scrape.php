@@ -27,13 +27,13 @@ $r = "d" . benc_str("files") . "d";
 $fields = "info_hash, times_completed, seeders, leechers";
 
 if (!isset($_GET["info_hash"]))
-	$query = "SELECT $fields FROM torrents ORDER BY info_hash";
+	$query = "SELECT $fields FROM torrents ORDER BY info_hash_hex";
 else
-	$query = "SELECT $fields FROM torrents WHERE " . hash_where("info_hash", unesc($_GET["info_hash"]));
+	$query = "SELECT $fields FROM torrents WHERE  info_hash_hex = ". bin2hex($_GET["info_hash"]);
 
 $res = mysql_query($query);
 
-while ($row = mysql_fetch_assoc($res)) {
+while (!is_bool($res) && $row = mysql_fetch_assoc($res)) {
 	$r .= "20:" . str_pad($row["info_hash"], 20) . "d" .
 		benc_str("complete") . "i" . $row["seeders"] . "e" .
 		benc_str("downloaded") . "i" . $row["times_completed"] . "e" .
